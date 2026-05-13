@@ -415,6 +415,9 @@
         url.searchParams.set(key, String(params[key]));
       });
       url.searchParams.set('callback', callbackName);
+      // Cache-buster: гарантирует уникальность URL, чтобы ни Safari, ни
+      // Google CDN не отдали закешированный JSONP-ответ.
+      url.searchParams.set('_t', String(Date.now()) + '_' + Math.floor(Math.random() * 1000000));
 
       script = document.createElement('script');
       script.async = true;
