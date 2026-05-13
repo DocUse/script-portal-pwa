@@ -15,5 +15,5 @@
 window.SCRIPT_PORTAL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwUQQ4XtYyajt6VFcldRTzCmU3PcFlVtQUdBQoJR3SafewHXyZ0XKkaFlk7HZsDia929Q/exec',
   oauthClientId: '435134581493-qkqpf78e7oh4e7th1e1rpd7qe9hpv7f3.apps.googleusercontent.com',
-  enableDebugOverlay: true,
+  enableDebugOverlay: false,
 };
