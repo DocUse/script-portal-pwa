@@ -20,6 +20,7 @@
     gisReady: false,
     isLoadingData: false,
     didAutoPrompt: false,
+    pendingScenarioKey: '',
   };
 
   var scriptPortalSidePanelHeightFrame_ = 0;
@@ -244,6 +245,7 @@
     scriptPortalState.idToken = '';
     scriptPortalState.emailHint = '';
     scriptPortalState.data = null;
+    scriptPortalState.pendingScenarioKey = '';
     try { sessionStorage.removeItem(TOKEN_STORAGE_KEY); } catch (e) {}
     try { sessionStorage.removeItem(TOKEN_EMAIL_HINT_KEY); } catch (e) {}
     if (window.google && google.accounts && google.accounts.id) {
@@ -284,6 +286,23 @@
 
   // ---------- Data loading ----------
 
+  function switchScenario_(scenarioKey) {
+    scriptPortalState.pendingScenarioKey = String(scenarioKey || '');
+    loadScriptPortalData_();
+  }
+
+  function updateUrlScenarioParam_(scenarioKey) {
+    try {
+      var url = new URL(window.location.href);
+      if (scenarioKey) {
+        url.searchParams.set('scenario', scenarioKey);
+      } else {
+        url.searchParams.delete('scenario');
+      }
+      window.history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + (url.hash ? url.hash : ''));
+    } catch (e) {}
+  }
+
   function loadScriptPortalData_() {
     if (!scriptPortalState.idToken) {
       renderScriptPortalLoginScreen_('');
@@ -294,12 +313,15 @@
     renderScriptPortalLoadingState_();
 
     var launchParams = readScriptPortalLaunchParams_();
+    var effectiveScenarioKey = scriptPortalState.pendingScenarioKey || launchParams.scenarioKey || '';
     var requestParams = {
       api: 'script-portal-data',
       id_token: scriptPortalState.idToken,
     };
-    if (launchParams.scenarioKey) requestParams.scenario = launchParams.scenarioKey;
-    if (launchParams.activeStep) requestParams.step = launchParams.activeStep;
+    if (effectiveScenarioKey) requestParams.scenario = effectiveScenarioKey;
+    if (launchParams.activeStep && !scriptPortalState.pendingScenarioKey) {
+      requestParams.step = launchParams.activeStep;
+    }
 
     jsonpFetch_(getApiUrl_(), requestParams)
       .then(function (response) {
@@ -335,6 +357,11 @@
     scriptPortalState.activeStepIndex = coerceScriptPortalIndex_(initialStep, stepsLen);
     scriptPortalState.openPromptIds = {};
     scriptPortalState.openContractIds = {};
+    scriptPortalState.activeMobileTab = 'script';
+    if (document.body) document.body.setAttribute('data-active-tab', 'script');
+    var loadedKey = (response.data && response.data.scenario) ? String(response.data.scenario.key || '') : '';
+    updateUrlScenarioParam_(loadedKey);
+    scriptPortalState.pendingScenarioKey = '';
     renderScriptPortalPage_();
   }
 
@@ -546,11 +573,17 @@
   function renderScriptPortalTopLinks_(meta, currentScenarioKey) {
     var links = [];
     (meta.scenarioLinks || []).forEach(function (item) {
+      var isCurrent = item.key === currentScenarioKey;
+      var disabled = scriptPortalState.isLoadingData ? 'disabled' : '';
       links.push(
-        '<a class="topbar-link ' + (item.key === currentScenarioKey ? 'is-active' : '') + '"' +
-        ' href="' + escapeScriptPortalAttr_(item.url || '#') + '">' +
+        '<button type="button"' +
+        ' class="topbar-link ' + (isCurrent ? 'is-active' : '') + '"' +
+        ' data-role="scenario-switch"' +
+        ' data-scenario-key="' + escapeScriptPortalAttr_(item.key) + '"' +
+        ' style="appearance:none;cursor:pointer;color:#fff;"' +
+        ' ' + disabled + '>' +
         escapeScriptPortalHtml_(item.label) +
-        '</a>'
+        '</button>'
       );
     });
 
@@ -766,6 +799,18 @@
       if (signOutBtn) {
         event.preventDefault();
         signOut_();
+        return;
+      }
+
+      var scenarioSwitchBtn = event.target.closest('[data-role="scenario-switch"]');
+      if (scenarioSwitchBtn) {
+        event.preventDefault();
+        var nextKey = scenarioSwitchBtn.getAttribute('data-scenario-key') || '';
+        var currentKey = (scriptPortalState.data && scriptPortalState.data.scenario)
+          ? scriptPortalState.data.scenario.key
+          : '';
+        if (!nextKey || nextKey === currentKey || scriptPortalState.isLoadingData) return;
+        switchScenario_(nextKey);
         return;
       }
 
