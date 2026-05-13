@@ -13,7 +13,7 @@
 //      в правом верхнем углу. Нужен для проверки, что PWA рендерится в реальном
 //      393px viewport iPhone, а не в 980px iframe. Выключить после проверки.
 window.SCRIPT_PORTAL_CONFIG = {
-  apiUrl: 'PASTE_NEW_APPS_SCRIPT_EXEC_URL_HERE',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbwUQQ4XtYyajt6VFcldRTzCmU3PcFlVtQUdBQoJR3SafewHXyZ0XKkaFlk7HZsDia929Q/exec',
   oauthClientId: '435134581493-qkqpf78e7oh4e7th1e1rpd7qe9hpv7f3.apps.googleusercontent.com',
   enableDebugOverlay: true,
 };
