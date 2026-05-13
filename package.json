@@ -1,0 +1,9 @@
+{
+  "name": "script-portal-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PWA-обёртка тренировочного кабинета 'Скрипты обучения' над Apps Script JSON API",
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html config.js styles.css app.js manifest.webmanifest dist/ && rm -rf dist/icons && cp -R icons dist/icons"
+  }
+}

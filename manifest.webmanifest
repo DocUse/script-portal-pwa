@@ -1,0 +1,21 @@
+{
+  "name": "NaimTech | Скрипты обучения",
+  "short_name": "Скрипты",
+  "description": "Тренировочный кабинет рекрутера: сценарий звонка по шагам, ответы на возражения, шпаргалка.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfcfc",
+  "theme_color": "#044ec6",
+  "lang": "ru",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
