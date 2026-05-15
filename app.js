@@ -355,6 +355,11 @@
         return;
       }
 
+      if (errCode === 'recruiter_not_found' || errCode === 'recruiter_inactive' || errCode === 'no_portal_access') {
+        renderScriptPortalNoAccessScreen_(scriptPortalState.emailHint);
+        return;
+      }
+
       renderScriptPortalError_(errMsg);
       return;
     }
@@ -451,19 +456,29 @@
 
   // ---------- Login & loading & error screens ----------
 
+  function buildAuthLogoHtml_() {
+    return '<img class="auth-logo" src="./icons/icon.svg?v=2" alt="NaimTech" width="72" height="72">';
+  }
+
   function renderScriptPortalLoginScreen_(message) {
     scriptPortalApp.innerHTML =
-      '<div class="loading-state">' +
-      '<h2>Вход в "Скрипты обучения"</h2>' +
-      '<p>Войдите через Google. Доступ открыт сотрудникам из "Справочник рекрутеров".</p>' +
-      (message ? '<p style="color:#b91c1c;margin-top:10px;">' + escapeScriptPortalHtml_(message) + '</p>' : '') +
-      '<div id="script-portal-google-button" style="display:flex;justify-content:center;margin-top:18px;"></div>' +
+      '<div class="auth-screen">' +
+        '<div class="auth-card">' +
+          buildAuthLogoHtml_() +
+          '<h1 class="auth-title">Вход в Личный Кабинет NaimTech</h1>' +
+          '<p class="auth-subtitle">Войдите через Google.</p>' +
+          '<div class="auth-actions">' +
+            '<div id="script-portal-google-button"></div>' +
+          '</div>' +
+          (message ? '<div class="auth-status">' + escapeScriptPortalHtml_(message) + '</div>' : '') +
+        '</div>' +
+        '<div class="auth-footer">NaimTech &middot; Обучение и скрипты</div>' +
       '</div>';
 
     var container = document.getElementById('script-portal-google-button');
     if (!container) return;
     if (!(window.google && google.accounts && google.accounts.id && typeof google.accounts.id.renderButton === 'function')) {
-      container.innerHTML = '<p style="color:#64748b;">Загружаем Google Sign-In…</p>';
+      container.innerHTML = '<p style="color:#64748b;margin:0;">Загружаем Google Sign-In…</p>';
       return;
     }
 
@@ -478,7 +493,7 @@
         locale: 'ru',
       });
     } catch (e) {
-      container.innerHTML = '<p style="color:#b91c1c;">Не удалось показать кнопку входа: ' + escapeScriptPortalHtml_(e && e.message ? e.message : String(e)) + '</p>';
+      container.innerHTML = '<p style="color:#b91c1c;margin:0;">Не удалось показать кнопку входа.</p>';
     }
 
     if (!scriptPortalState.didAutoPrompt) {
@@ -489,19 +504,47 @@
 
   function renderScriptPortalLoadingState_() {
     scriptPortalApp.innerHTML =
-      '<div class="loading-state">' +
-      '<h2>Загружаем скрипты обучения</h2>' +
-      '<p>Считываем данные из Google Таблицы.</p>' +
+      '<div class="auth-screen">' +
+        '<div class="auth-card auth-loading-card">' +
+          '<div class="auth-spinner" aria-hidden="true"></div>' +
+          '<h1 class="auth-title">Подгружаем скрипты</h1>' +
+          '<p class="auth-loading-hint">Процессор уже вспотел…</p>' +
+        '</div>' +
       '</div>';
+  }
+
+  function renderScriptPortalNoAccessScreen_(email) {
+    scriptPortalApp.innerHTML =
+      '<div class="auth-screen">' +
+        '<div class="auth-card">' +
+          buildAuthLogoHtml_() +
+          '<h1 class="auth-title">Доступа пока нет</h1>' +
+          '<p class="auth-subtitle">Ваша учётная запись пока не подключена к кабинету. Обратитесь к руководителю, чтобы вам открыли доступ.</p>' +
+          (email
+            ? '<div class="auth-footer" style="margin-top:0;">Вы вошли как<br><span class="auth-email">' + escapeScriptPortalHtml_(email) + '</span></div>'
+            : '') +
+          '<div class="auth-actions" style="margin-top:18px;">' +
+            '<button type="button" class="auth-secondary-button" data-role="sign-out">Войти другим аккаунтом</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    var out = scriptPortalApp.querySelector('[data-role="sign-out"]');
+    if (out) out.addEventListener('click', signOut_);
   }
 
   function renderScriptPortalError_(message) {
     scriptPortalApp.innerHTML =
-      '<div class="error-state">' +
-      '<h2>Не удалось открыть портал скриптов</h2>' +
-      '<p>' + escapeScriptPortalHtml_(message) + '</p>' +
-      '<p style="margin-top:14px;"><button type="button" data-role="retry-load" style="appearance:none;border:1px solid rgba(15,23,42,0.2);border-radius:10px;padding:10px 18px;font:inherit;cursor:pointer;background:#fff;">Повторить</button> ' +
-      '<button type="button" data-role="sign-out" style="appearance:none;border:1px solid rgba(15,23,42,0.2);border-radius:10px;padding:10px 18px;font:inherit;cursor:pointer;background:#fff;margin-left:8px;">Выйти</button></p>' +
+      '<div class="auth-screen">' +
+        '<div class="auth-card">' +
+          buildAuthLogoHtml_() +
+          '<h1 class="auth-title">Что-то пошло не так</h1>' +
+          '<p class="auth-subtitle">' + escapeScriptPortalHtml_(message) + '</p>' +
+          '<div class="auth-actions">' +
+            '<button type="button" class="auth-secondary-button" data-role="retry-load">Повторить</button>' +
+            '<button type="button" class="auth-secondary-button" data-role="sign-out">Войти другим аккаунтом</button>' +
+          '</div>' +
+        '</div>' +
       '</div>';
 
     var retry = scriptPortalApp.querySelector('[data-role="retry-load"]');
