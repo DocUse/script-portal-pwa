@@ -219,7 +219,11 @@
       google.accounts.id.initialize({
         client_id: clientId,
         callback: handleGoogleCredentialResponse_,
-        auto_select: false,
+        // Silent re-auth: если пользователь уже когда-то логинился через
+        // GIS в этом браузере и не нажимал signOut — Google молча выдаст
+        // новый токен (с коротким тостом "Signing in as ..."). Это нужно
+        // на случай, когда токен в localStorage истёк (живёт ~1 час).
+        auto_select: true,
         ux_mode: 'popup',
         context: 'signin',
         itp_support: true,
@@ -246,25 +250,30 @@
     scriptPortalState.emailHint = '';
     scriptPortalState.data = null;
     scriptPortalState.pendingScenarioKey = '';
-    try { sessionStorage.removeItem(TOKEN_STORAGE_KEY); } catch (e) {}
-    try { sessionStorage.removeItem(TOKEN_EMAIL_HINT_KEY); } catch (e) {}
+    try { localStorage.removeItem(TOKEN_STORAGE_KEY); } catch (e) {}
+    try { localStorage.removeItem(TOKEN_EMAIL_HINT_KEY); } catch (e) {}
     if (window.google && google.accounts && google.accounts.id) {
       try { google.accounts.id.disableAutoSelect(); } catch (e) {}
     }
     renderScriptPortalLoginScreen_('Вы вышли. Войдите снова, чтобы продолжить.');
   }
 
+  // Храним токен в localStorage, чтобы он переживал закрытие вкладки и PWA.
+  // Сам токен Google ID живёт ~1 час; по истечении приходит новый через
+  // auto_select GIS (без клика). На устройстве пользователя данные не
+  // секретные — токен невалиден через час, а доступ к данным всё равно
+  // ограничен сверкой email со "Справочник рекрутеров" на сервере.
   function persistToken_(token, emailHint) {
-    try { sessionStorage.setItem(TOKEN_STORAGE_KEY, String(token || '')); } catch (e) {}
-    try { sessionStorage.setItem(TOKEN_EMAIL_HINT_KEY, String(emailHint || '')); } catch (e) {}
+    try { localStorage.setItem(TOKEN_STORAGE_KEY, String(token || '')); } catch (e) {}
+    try { localStorage.setItem(TOKEN_EMAIL_HINT_KEY, String(emailHint || '')); } catch (e) {}
   }
 
   function readCachedToken_() {
-    try { return sessionStorage.getItem(TOKEN_STORAGE_KEY) || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem(TOKEN_STORAGE_KEY) || ''; } catch (e) { return ''; }
   }
 
   function readCachedEmailHint_() {
-    try { return sessionStorage.getItem(TOKEN_EMAIL_HINT_KEY) || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem(TOKEN_EMAIL_HINT_KEY) || ''; } catch (e) { return ''; }
   }
 
   function extractEmailFromIdToken_(jwt) {
@@ -341,7 +350,7 @@
 
       if (errCode === 'token_expired' || errCode === 'token_invalid' || errCode === 'token_aud_mismatch' || errCode === 'no_token' || errCode === 'token_no_email') {
         scriptPortalState.idToken = '';
-        try { sessionStorage.removeItem(TOKEN_STORAGE_KEY); } catch (e) {}
+        try { localStorage.removeItem(TOKEN_STORAGE_KEY); } catch (e) {}
         renderScriptPortalLoginScreen_('Сессия истекла. Войдите ещё раз.');
         return;
       }
